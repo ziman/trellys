@@ -1,0 +1,42 @@
+module Bin where
+
+data Nat : Type where
+  Z
+  S of (Nat)
+
+log plus : (x : Nat) -> (y : Nat) -> Nat
+ind plus x = \y.
+  case x [x_eq] of
+    Z    -> y
+    S x' -> S (plus x' [ord x_eq] y)
+
+data Bin (w : Nat) (v : Nat) : Type where
+  N of [w = Z] [v = Z]
+  I of [v' : Nat] [w' : Nat] [v = S (plus v' v')] [w = S w'] (Bin w' v')
+  O of [v' : Nat] [w' : Nat] [v =    plus v' v' ] [w = S w'] (Bin w' v')
+
+log bigVal : (w : Nat) -> Nat
+ind bigVal w =
+  case w [w_eq] of
+    Z    -> Z
+    S w' -> S (plus (bigVal w' [ord w_eq]) (bigVal w' [ord w_eq]))
+
+log generate : (w : Nat) -> Bin w (bigVal w)
+ind generate w =
+  case w [w_eq] of
+    Z    -> N [w_eq] [(join : bigVal Z = Z)]
+    S w' -> I [bigVal w']
+                [w']
+                [TRUSTME]
+                [w_eq]
+                (generate w' [ord w_eq])
+
+log eliminate : [w : Nat] -> [v : Nat] -> Bin w v -> Nat
+ind eliminate [w] [v] b =
+  case b [b_eq] of
+    N [v_eq] [w_eq] -> Z
+    I [v'] [w'] [v_eq] [w_eq] b' -> S (eliminate [w'] [v'] b' [ord b_eq])
+    O [v'] [w'] [v_eq] [w_eq] b' ->    eliminate [w'] [v'] b' [ord b_eq]
+
+x : Nat
+x = Z
